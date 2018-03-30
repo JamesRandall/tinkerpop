@@ -78,7 +78,7 @@ namespace Gremlin.Net.Driver
             await _webSocketConnection.SendMessageAsync(serializedMsg).ConfigureAwait(false);
         }
 
-        private async Task<IReadOnlyCollection<T>> ReceiveAsync<T>()
+        private async Task<GremlinResponse<T>> ReceiveAsync<T>()
         {
             ResponseStatus status;
             IAggregator aggregator = null;
