@@ -53,7 +53,7 @@ namespace Gremlin.Net.Driver
             _messageSerializer = new JsonMessageSerializer(mimeType);
         }
 
-        public async Task<IReadOnlyCollection<T>> SubmitAsync<T>(RequestMessage requestMessage)
+        public async Task<GremlinResponse<T>> SubmitAsync<T>(RequestMessage requestMessage)
         {
             await SendAsync(requestMessage).ConfigureAwait(false);
             return await ReceiveAsync<T>().ConfigureAwait(false);
@@ -84,6 +84,8 @@ namespace Gremlin.Net.Driver
             IAggregator aggregator = null;
             var isAggregatingSideEffects = false;
             var result = new List<T>();
+            List<int> statusCodes = new List<int>();
+            List<Dictionary<string, object>> attributes = new List<Dictionary<string, object>>();
             do
             {
                 var received = await _webSocketConnection.ReceiveMessageAsync().ConfigureAwait(false);
@@ -96,29 +98,37 @@ namespace Gremlin.Net.Driver
                 {
                     await AuthenticateAsync().ConfigureAwait(false);
                 }
-                else if (status.Code != ResponseStatusCode.NoContent)
+                else
                 {
-                    var receivedData = _graphSONReader.ToObject(receivedMsg.Result.Data);
-                    foreach (var d in receivedData)
-                        if (receivedMsg.Result.Meta.ContainsKey(Tokens.ArgsSideEffectKey))
-                        {
-                            if (aggregator == null)
-                                aggregator =
-                                    new AggregatorFactory().GetAggregatorFor(
-                                        (string) receivedMsg.Result.Meta[Tokens.ArgsAggregateTo]);
-                            aggregator.Add(d);
-                            isAggregatingSideEffects = true;
-                        }
-                        else
-                        {
-                            result.Add(d);
-                        }
+                    statusCodes.Add((int)status.Code);
+                    attributes.Add(status.Attributes);
+                    if (status.Code != ResponseStatusCode.NoContent)
+                    {
+                        var receivedData = _graphSONReader.ToObject(receivedMsg.Result.Data);
+                        foreach (var d in receivedData)
+                            if (receivedMsg.Result.Meta.ContainsKey(Tokens.ArgsSideEffectKey))
+                            {
+                                if (aggregator == null)
+                                    aggregator =
+                                        new AggregatorFactory().GetAggregatorFor(
+                                            (string)receivedMsg.Result.Meta[Tokens.ArgsAggregateTo]);
+                                aggregator.Add(d);
+                                isAggregatingSideEffects = true;
+                            }
+                            else
+                            {
+                                result.Add(d);
+                            }
+                    }
                 }
+                
             } while (status.Code == ResponseStatusCode.PartialContent || status.Code == ResponseStatusCode.Authenticate);
 
-            if (isAggregatingSideEffects)
-                return new List<T> {(T) aggregator.GetAggregatedResult()};
-            return result;
+            List<T> resultsToReturn = isAggregatingSideEffects
+                ? new List<T> {(T) aggregator.GetAggregatedResult()}
+                : result;
+
+            return new GremlinResponse<T>(resultsToReturn, attributes, statusCodes);
         }
 
         private async Task AuthenticateAsync()

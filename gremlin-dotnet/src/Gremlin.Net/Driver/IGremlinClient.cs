@@ -43,6 +43,6 @@ namespace Gremlin.Net.Driver
         ///     Thrown when a response is received from Gremlin Server that indicates
         ///     that an error occurred.
         /// </exception>
-        Task<IReadOnlyCollection<T>> SubmitAsync<T>(RequestMessage requestMessage);
+        Task<GremlinResponse<T>> SubmitAsync<T>(RequestMessage requestMessage);
     }
 }

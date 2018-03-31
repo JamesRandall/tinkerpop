@@ -92,10 +92,10 @@ namespace Gremlin.Net.Driver
         ///     Thrown when a response is received from Gremlin Server that indicates
         ///     that an error occurred.
         /// </exception>
-        public static async Task SubmitAsync(this IGremlinClient gremlinClient, string requestScript,
+        public static async Task<GremlinResponse> SubmitAsync(this IGremlinClient gremlinClient, string requestScript,
             Dictionary<string, object> bindings = null)
         {
-            await gremlinClient.SubmitAsync<object>(requestScript, bindings).ConfigureAwait(false);
+            return await gremlinClient.SubmitAsync<object>(requestScript, bindings).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -109,9 +109,9 @@ namespace Gremlin.Net.Driver
         ///     Thrown when a response is received from Gremlin Server that indicates
         ///     that an error occurred.
         /// </exception>
-        public static async Task SubmitAsync(this IGremlinClient gremlinClient, RequestMessage requestMessage)
+        public static async Task<GremlinResponse> SubmitAsync(this IGremlinClient gremlinClient, RequestMessage requestMessage)
         {
-            await gremlinClient.SubmitAsync<object>(requestMessage).ConfigureAwait(false);
+            return await gremlinClient.SubmitAsync<object>(requestMessage).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -126,7 +126,7 @@ namespace Gremlin.Net.Driver
         ///     Thrown when a response is received from Gremlin Server that indicates
         ///     that an error occurred.
         /// </exception>
-        public static async Task<IReadOnlyCollection<T>> SubmitAsync<T>(this IGremlinClient gremlinClient,
+        public static async Task<GremlinResponse<T>> SubmitAsync<T>(this IGremlinClient gremlinClient,
             string requestScript,
             Dictionary<string, object> bindings = null)
         {
