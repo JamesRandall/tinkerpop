@@ -22,6 +22,8 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
+using Gremlin.Net.Driver.Messages;
 
 namespace Gremlin.Net.Driver.Exceptions
 {
@@ -33,5 +35,21 @@ namespace Gremlin.Net.Driver.Exceptions
         internal ResponseException(string message) : base(message)
         {
         }
+
+        internal ResponseException(string message, ResponseStatusCode code, Dictionary<string, object> attributes) : this(message)
+        {
+            StatusCode = (int)code;
+            Attributes = attributes;
+        }
+
+        /// <summary>
+        /// The status code returned by the server
+        /// </summary>
+        public int StatusCode { get; }
+
+        /// <summary>
+        /// Attributes returned along with the response
+        /// </summary>
+        public Dictionary<string, object> Attributes { get; }
     }
 }
